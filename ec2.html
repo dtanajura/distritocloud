@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon EC2 - Semana 1</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* SETUP & CORE DESIGN TOKENS */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            background-color: #0b0f19; 
+            color: #f8fafc;
+            font-family: 'Lato', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* SLIDE CONTAINER */
+        .presentation-wrapper {
+            position: relative;
+            width: 1280px;
+            height: 720px;
+            background-color: #0f172a;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: calc(100% - 60px); /* Space for bottom navigation */
+            padding: 50px 60px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            z-index: 2;
+        }
+
+        /* Decorative Accent Background */
+        .slide::before {
+            content: '';
+            position: absolute;
+            top: -10%;
+            right: -10%;
+            width: 40%;
+            height: 40%;
+            background: radial-gradient(circle, rgba(255, 153, 0, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .slide > * { position: relative; z-index: 2; }
+
+        /* TYPOGRAPHY & TITLES */
+        h1, h2, h3 { font-family: 'Urbanist', sans-serif; color: #ffffff; }
+        h1 { font-size: 64px; line-height: 1.1; font-weight: 700; margin-bottom: 20px; }
+        .slide-title { 
+            font-size: 38px; 
+            font-weight: 700; 
+            margin-bottom: 30px; 
+            text-align: left; 
+            width: 100%; 
+            border-left: 6px solid #FF9900; 
+            padding-left: 20px; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        p, li { font-size: 18px; line-height: 1.6; color: #cbd5e1; }
+        strong { color: #FF9900; }
+
+        .content-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; }
+
+        /* SLIDE CONTROLS (BOTTOM NAV) */
+        .slide-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background-color: #0b0f19;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            border-top: 1px solid #1e293b;
+            z-index: 10;
+        }
+
+        .nav-btn {
+            background-color: #1e293b;
+            color: #f8fafc;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Urbanist', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn:hover { background-color: #FF9900; color: #000000; }
+        .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .nav-btn:disabled:hover { background-color: #1e293b; color: #f8fafc; }
+
+        .progress-indicator { font-family: 'Urbanist', sans-serif; font-size: 16px; color: #94a3b8; font-weight: 600; }
+
+        /* LAYOUT STYLES */
+        .title-layout { text-align: center; align-items: center; justify-content: center; height: 100%; display: flex; flex-direction: column; }
+        .title-layout h1 span { color: #FF9900; }
+        .subtitle { font-size: 24px; color: #94a3b8; margin-top: 15px; }
+
+        .section-title-layout { align-items: center; justify-content: center; text-align: center; height: 100%; display: flex; flex-direction: column; }
+        .section-title-layout h2 { font-size: 56px; margin-bottom: 10px; }
+        .section-title-layout p { font-size: 22px; color: #94a3b8; }
+        .section-title-layout hr { width: 120px; height: 6px; background: #FF9900; border: none; margin-top: 25px; border-radius: 3px; }
+
+        .tiled-content { display: flex; gap: 24px; width: 100%; align-items: stretch; }
+        .tile { flex: 1; background: #1e293b; padding: 30px; border-radius: 12px; border-bottom: 4px solid #FF9900; transition: transform 0.2s; }
+        .tile:hover { transform: translateY(-5px); }
+        .tile .icon { font-size: 40px; color: #FF9900; margin-bottom: 15px; }
+        .tile h3 { font-size: 24px; margin-bottom: 12px; }
+
+        .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; width: 100%; align-items: center; }
+        .two-column.tiled > div { background: #1e293b; padding: 35px; border-radius: 12px; }
+        .two-column.tiled h3 { margin-bottom: 15px; font-size: 24px; }
+
+        .table-layout table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .table-layout th { background: #FF9900; color: #000; padding: 15px 20px; text-align: left; font-size: 20px; font-family: 'Urbanist', sans-serif; font-weight: 700; }
+        .table-layout td { padding: 15px 20px; border-bottom: 1px solid #334155; font-size: 18px; }
+        .table-layout tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+
+        .bullet-list { list-style: none; }
+        .bullet-list li { position: relative; padding-left: 40px; margin-bottom: 20px; }
+        .bullet-list i { position: absolute; left: 0; top: 4px; color: #FF9900; font-size: 20px; }
+
+        .image-wrapper { width: 100%; height: 350px; border-radius: 12px; overflow: hidden; border: 1px solid #334155; background-color: #0b0f19; }
+        .image-wrapper img { width: 100%; height: 100%; object-fit: contain; }
+
+        /* INTERACTIVE QUIZ DESIGN (SAA-C03 Style) */
+        .quiz-container { display: flex; flex-direction: column; gap: 20px; width: 100%; }
+        
+        .quiz-question { 
+            background: #1e293b; 
+            padding: 25px 30px; 
+            border-radius: 10px; 
+            border-left: 5px solid #FF9900; 
+            font-size: 19px; 
+            line-height: 1.5; 
+            font-weight: 600;
+            color: #f8fafc;
+        }
+
+        .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; }
+        
+        .quiz-option { 
+            background: #151f32; 
+            border: 2px solid #334155; 
+            padding: 20px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            color: #cbd5e1;
+            text-align: left;
+            transition: all 0.2s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .quiz-option:hover { 
+            border-color: #FF9900; 
+            background: #1e293b; 
+        }
+
+        .option-letter { 
+            background: #1e293b; 
+            color: #FF9900; 
+            font-weight: 700; 
+            width: 32px; 
+            height: 32px; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            flex-shrink: 0;
+            font-family: 'Urbanist', sans-serif;
+        }
+
+        /* Correct state */
+        .quiz-option.correct { 
+            border-color: #10b981 !important; 
+            background: rgba(16, 185, 129, 0.1) !important; 
+            color: #ffffff;
+        }
+        .quiz-option.correct .option-letter { 
+            background: #10b981 !important; 
+            color: #ffffff !important; 
+        }
+
+        /* Incorrect state */
+        .quiz-option.incorrect { 
+            border-color: #ef4444 !important; 
+            background: rgba(239, 68, 68, 0.1) !important; 
+            opacity: 0.8;
+        }
+        .quiz-option.incorrect .option-letter { 
+            background: #ef4444 !important; 
+            color: #ffffff !important; 
+        }
+
+        /* Locked state */
+        .quiz-options.locked .quiz-option { 
+            pointer-events: none; 
+        }
+
+        /* Explanation box */
+        .quiz-explanation { 
+            background: #1e293b; 
+            border-radius: 8px; 
+            padding: 20px 25px; 
+            border-top: 4px solid #3b82f6; 
+            display: none; 
+            animation: fadeIn 0.3s ease;
+        }
+        .quiz-explanation h4 { font-family: 'Urbanist', sans-serif; color: #3b82f6; font-size: 18px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;}
+        .quiz-explanation p { font-size: 15px; color: #cbd5e1; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Footer info on slides */
+        .slide-footer-logo {
+            position: absolute;
+            top: 40px;
+            right: 60px;
+            font-family: 'Urbanist', sans-serif;
+            font-weight: 700;
+            color: #FF9900;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="presentation-wrapper">
+        
+        <!-- Slide 1: Title Slide -->
+        <div class="slide active" id="slide-1" style="background-image: linear-gradient(rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.9)), url('http://googleusercontent.com/image_collection/image_retrieval/13493498679771323716'); background-size: cover;">
+            <div class="title-layout">
+                <h1>Amazon <span>EC2</span>: <br>O Coração da Nuvem</h1>
+                <p class="subtitle">Difusão de Conhecimento em Cloud Services • Semana 1</p>
+            </div>
+        </div>
+
+        <!-- Slide 2: Section Title - Fundamentals -->
+        <div class="slide" id="slide-2">
+            <div class="section-title-layout">
+                <h2>Fundamentos Teóricos</h2>
+                <p>Compreendendo a base de computação elástica da AWS</p>
+                <hr>
+            </div>
+        </div>
+
+        <!-- Slide 3: What is EC2? -->
+        <div class="slide" id="slide-3">
+            <div class="slide-footer-logo"><i class="fa-brands fa-aws"></i> AWS Cloud</div>
+            <h2 class="slide-title">O que é o Amazon EC2?</h2>
+            <div class="content-area">
+                <div class="tiled-content">
+                    <div class="tile">
+                        <div class="icon"><i class="fa-solid fa-expand"></i></div>
+                        <h3>Elasticidade</h3>
+                        <p>Capacidade computacional <strong>redimensionável</strong>. Ajuste sua infraestrutura à demanda instantaneamente.</p>
+                    </div>
+                    <div class="tile">
+                        <div class="icon"><i class="fa-solid fa-sliders"></i></div>
+                        <h3>Controle Total</h3>
+                        <p>Você tem <strong>acesso root administrativo</strong> à instância virtual. Instale pacotes e configure do seu jeito.</p>
+                    </div>
+                    <div class="tile">
+                        <div class="icon"><i class="fa-solid fa-coins"></i></div>
+                        <h3>Custo Eficiente</h3>
+                        <p>Modelo de <strong>pagamento por uso</strong>. Sem necessidade de comprar hardware antecipadamente.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Pricing Models -->
+        <div class="slide" id="slide-4">
+            <div class="slide-footer-logo"><i class="fa-brands fa-aws"></i> AWS Cloud</div>
+            <h2 class="slide-title">Modelos de Compra e Economia</h2>
+            <div class="content-area">
+                <div class="table-layout">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Modelo</th>
+                                <th>Uso Ideal</th>
+                                <th>Impacto Financeiro</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>On-Demand</strong></td>
+                                <td>Workloads imprevisíveis e de curto prazo. Desenvolvimento inicial.</td>
+                                <td>Preço cheio. Cobrança por segundo de uso.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Spot Instances</strong></td>
+                                <td>Processamento batch, tarefas tolerantes a falhas e flexíveis.</td>
+                                <td>Até <strong>90% de desconto</strong> sobre o valor sob demanda.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Savings Plans</strong></td>
+                                <td>Comprometimento de uso computacional constante (1 ou 3 anos).</td>
+                                <td>Até <strong>72% de desconto</strong> para uso estável.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Reserved Instances</strong></td>
+                                <td>Capacidade garantida para aplicações em estado estacionário.</td>
+                                <td>Desconto significativo semelhante ao Savings Plan.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Components -->
+        <div class="slide" id="slide-5">
+            <div class="slide-footer-logo"><i class="fa-brands fa-aws"></i> AWS Cloud</div>
+            <h2 class="slide-title">Componentes Principais do EC2</h2>
+            <div class="content-area">
+                <div class="two-column tiled">
+                    <div>
+                        <h3><i class="fa-solid fa-box-open" style="color:#FF9900; margin-right:10px;"></i> AMIs & Instâncias</h3>
+                        <p>A <strong>AMI (Amazon Machine Image)</strong> é o modelo pronto (SO, drivers, pacotes). O tipo da instância (ex: t3.micro) define os recursos físicos virtuais (VCPUs e RAM).</p>
+                    </div>
+                    <div>
+                        <h3><i class="fa-solid fa-shield-halved" style="color:#FF9900; margin-right:10px;"></i> Segurança & Acesso</h3>
+                        <p><strong>Security Groups</strong> atuam como firewalls virtuais stateless. Os <strong>Key Pairs</strong> garantem o acesso criptografado seguro via conexões SSH/RDP.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Section Title - Lab -->
+        <div class="slide" id="slide-6">
+            <div class="section-title-layout">
+                <h2>Laboratório Prático</h2>
+                <p>Colocando em prática: Lançando e acessando seu primeiro servidor Web</p>
+                <hr>
+            </div>
+        </div>
+
+        <!-- Slide 7: Lab Goals -->
+        <div class="slide" id="slide-7">
+            <div class="slide-footer-logo"><i class="fa-solid fa-laptop-code"></i> Prática</div>
+            <h2 class="slide-title">Objetivos do Laboratório</h2>
+            <div class="content-area">
+                <div class="two-column">
+                    <div>
+                        <ul class="bullet-list">
+                            <li><i class="fa-solid fa-circle-check"></i> Provisionar uma instância Linux (Amazon Linux 2023).</li>
+                            <li><i class="fa-solid fa-circle-check"></i> Configurar <strong>Security Groups</strong> para tráfego público.</li>
+                            <li><i class="fa-solid fa-circle-check"></i> Conectar sem chaves via <strong>EC2 Instance Connect</strong>.</li>
+                            <li><i class="fa-solid fa-circle-check"></i> Instalar um servidor web HTTP Apache e validar o acesso.</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <div class="image-wrapper">
+                            <img src="http://googleusercontent.com/image_collection/image_retrieval/7350358173427810224" alt="Console de Instâncias EC2">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Lab Steps -->
+        <div class="slide" id="slide-8">
+            <div class="slide-footer-logo"><i class="fa-solid fa-laptop-code"></i> Prática</div>
+            <h2 class="slide-title">Guia de Implementação Rápida</h2>
+            <div class="content-area">
+                <div class="bullet-list" style="columns: 2; column-gap: 40px;">
+                    <ul>
+                        <li style="break-inside: avoid;"><i class="fa-solid fa-1"></i> No Console AWS, navegue até <strong>EC2 Dashboard</strong> e clique em "Launch Instance".</li>
+                        <li style="break-inside: avoid;"><i class="fa-solid fa-2"></i> Nomeie a máquina como <code>Meu-Servidor-Web</code>.</li>
+                        <li style="break-inside: avoid;"><i class="fa-solid fa-3"></i> Escolha a imagem <strong>Amazon Linux 2023</strong> (AMI).</li>
+                        <li style="break-inside: avoid;"><i class="fa-solid fa-4"></i> Mantenha o tipo <strong>t2.micro / t3.micro</strong> (Elegível para a camada gratuita).</li>
+                        <li style="break-inside: avoid;"><i class="fa-solid fa-5"></i> Em Configurações de Rede, marque <strong>"Allow HTTP traffic from the internet"</strong>.</li>
+                        <li style="break-inside: avoid;"><i class="fa-solid fa-6"></i> Clique em <strong>"Launch Instance"</strong> e aguarde o status mudar para "Running".</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: Section Title - Simulado -->
+        <div class="slide" id="slide-9">
+            <div class="section-title-layout">
+                <h2>AWS Architect Simulation</h2>
+                <p>Simulado com questões interativas reais do exame SAA-C03</p>
+                <hr>
+            </div>
+        </div>
+
+        <!-- Slide 10: Quiz Q1 - EC2 Pricing -->
+        <div class="slide" id="slide-10">
+            <div class="slide-footer-logo"><i class="fa-solid fa-graduation-cap"></i> SAA-C03</div>
+            <h2 class="slide-title">Questão 1: Computação Otimizada e Custo</h2>
+            <div class="content-area">
+                <div class="quiz-container">
+                    <div class="quiz-question">
+                        Uma empresa executa uma aplicação comercial crítica no Amazon EC2 com uma carga de trabalho constante de 24/7 que consome 4 instâncias. Durante o horário comercial padrão, a demanda aumenta previsivelmente, exigindo até 8 instâncias adicionais. Qual combinação de modelos de compra do EC2 é a mais econômica e confiável para este cenário?
+                    </div>
+                    <div class="quiz-options" id="options-q1">
+                        <button class="quiz-option" onclick="checkAnswer('q1', this, false, 'Incorreto. Usar instâncias Spot para a carga principal de 24/7 é um risco arquitetural grave, pois a AWS pode encerrar suas instâncias com apenas 2 minutos de aviso prévio.')">
+                            <span class="option-letter">A</span>
+                            <span>Instâncias Spot para a carga estável de 4 instâncias e On-Demand para as 8 instâncias adicionais de pico.</span>
+                        </button>
+                        <button class="quiz-option" onclick="checkAnswer('q1', this, true, 'Correto! O Savings Plan garante descontos de até 72% para as instâncias de uso constante 24/7, enquanto as instâncias On-Demand dão a estabilidade e previsibilidade necessárias para os picos temporários sem risco de interrupção abrupta.')">
+                            <span class="option-letter">B</span>
+                            <span>Savings Plan/Instâncias Reservadas para as 4 instâncias constantes e instâncias On-Demand para os picos de demanda.</span>
+                        </button>
+                        <button class="quiz-option" onclick="checkAnswer('q1', this, false, 'Incorreto. Usar apenas instâncias Spot traria grande economia, mas violaria o requisito de confiabilidade exigido para uma aplicação comercial crítica.')">
+                            <span class="option-letter">C</span>
+                            <span>Utilizar apenas instâncias Spot para todo o parque (12 instâncias) por meio de um grupo de Auto Scaling.</span>
+                        </button>
+                        <button class="quiz-option" onclick="checkAnswer('q1', this, false, 'Incorreto. Comprar instâncias reservadas para o pico máximo de 12 instâncias geraria ociosidade e desperdício de custo durante as noites e finais de semana.')">
+                            <span class="option-letter">D</span>
+                            <span>Adquirir Instâncias Reservadas para a capacidade máxima de 12 instâncias para garantir o menor preço e capacidade estável.</span>
+                        </button>
+                    </div>
+                    <div class="quiz-explanation" id="exp-q1">
+                        <h4><i class="fa-solid fa-circle-info"></i> Explicação Arquitetural</h4>
+                        <p id="exp-text-q1"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 11: Quiz Q2 - Storage (EBS) -->
+        <div class="slide" id="slide-11">
+            <div class="slide-footer-logo"><i class="fa-solid fa-graduation-cap"></i> SAA-C03</div>
+            <h2 class="slide-title">Questão 2: Armazenamento e Alta Performance</h2>
+            <div class="content-area">
+                <div class="quiz-container">
+                    <div class="quiz-question">
+                        Um arquiteto de soluções está projetando um sistema de banco de dados relacional de alta performance baseado em instâncias Amazon EC2. O banco de dados requer taxas sustentadas e estáveis de até 64.000 IOPS e os dados não podem ser perdidos caso as instâncias sofram interrupções ou paradas de manutenção. Qual solução atende a esses requisitos?
+                    </div>
+                    <div class="quiz-options" id="options-q2">
+                        <button class="quiz-option" onclick="checkAnswer('q2', this, false, 'Incorreto. Embora o volume SSD gp3 seja excelente para uso geral, o limite físico de entrega de IOPS por volume individual de gp3 é de 16.000 IOPS, o que não atinge a marca necessária de 64.000.')">
+                            <span class="option-letter">A</span>
+                            <span>Anexar um volume EBS General Purpose SSD (gp3) configurado para desempenho máximo.</span>
+                        </button>
+                        <button class="quiz-option" onclick="checkAnswer('q2', this, true, 'Correto! Volumes EBS Provisioned IOPS (io2 Block Express) são desenhados para bancos de dados corporativos extremamente exigentes, entregando taxas de IOPS garantidas de até 256.000 IOPS com armazenamento persistente e durável.')">
+                            <span class="option-letter">B</span>
+                            <span>Utilizar um volume EBS do tipo Provisioned IOPS SSD (io2 Block Express) anexado à instância.</span>
+                        </button>
+                        <button class="quiz-option" onclick="checkAnswer('q2', this, false, 'Incorreto. O Instance Store oferece baixíssima latência e taxas de I/O gigantescas, mas é efêmero. Se a instância for interrompida, todos os dados do banco serão destruídos definitivamente.')">
+                            <span class="option-letter">C</span>
+                            <span>Hospedar o banco de dados em volumes de armazenamento local da própria instância (Instance Store).</span>
+                        </button>
+                        <button class="quiz-option" onclick="checkAnswer('q2', this, false, 'Incorreto. Volumes magnéticos Cold HDD (sc1) são projetados para armazenar volumes massivos de dados estáticos com baixo custo, não possuindo capacidade para lidar com I/O randômico de alta performance.')">
+                            <span class="option-letter">D</span>
+                            <span>Configurar um volume EBS do tipo Cold HDD (sc1) para obter melhor eficiência de custo e latência de transferência.</span>
+                        </button>
+                    </div>
+                    <div class="quiz-explanation" id="exp-q2">
+                        <h4><i class="fa-solid fa-circle-info"></i> Explicação Arquitetural</h4>
+                        <p id="exp-text-q2"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 12: Quiz Q3 - Resilience / High Availability -->
+        <div class="slide" id="slide-12">
+            <div class="slide-footer-logo"><i class="fa-solid fa-graduation-cap"></i> SAA-C03</div>
+            <h2 class="slide-title">Questão 3: Alta Disponibilidade e Resiliência</h2>
+            <div class="content-area">
+                <div class="quiz-container">
+                    <div class="quiz-question">
+                        Uma aplicação legada é executada em uma única instância EC2. O arquiteto de soluções precisa atualizar a arquitetura para torná-la altamente disponível e resiliente a falhas de uma zona de disponibilidade (AZ) inteira, sem intervenção humana e garantindo zero perda de tráfego. Qual arquitetura atende a essas premissas?
+                    </div>
+                    <div class="quiz-options" id="options-q3">
+                        <button class="quiz-option" onclick="checkAnswer('q3', this, true, 'Correto! Distribuir as instâncias em um grupo de Auto Scaling (ASG) em várias subredes de zonas de disponibilidade distintas atrás de um Application Load Balancer garante que se uma AZ falhar totalmente, as instâncias restantes nas AZs saudáveis assumirão o tráfego de maneira imediata.')">
+                            <span class="option-letter">A</span>
+                            <span>Criar uma AMI da instância, configurar um Application Load Balancer (ALB) e um Auto Scaling Group (ASG) em múltiplas AZs.</span>
+                        </button>
+                        <button class="quiz-option" onclick="checkAnswer('q3', this, false, 'Incorreto. O recurso de EC2 Auto Recovery monitora falhas de hardware ou sistema no mesmo host físico e recria a máquina no mesmo local de rede. Se a AZ inteira cair, a máquina continuará indisponível.')">
+                            <span class="option-letter">B</span>
+                            <span>Habilitar o recurso EC2 Auto Recovery na instância para reiniciá-la automaticamente em uma zona diferente se ocorrer falha física.</span>
+                        </button>
+                        <button class="quiz-option" onclick="checkAnswer('q3', this, false, 'Incorreto. Sincronizar dados entre regiões via scripts de forma síncrona não fornece alta disponibilidade em tempo real e exige configurações e reparações complexas e manuais de registros de DNS.')">
+                            <span class="option-letter">C</span>
+                            <span>Instanciar um servidor secundário em outra Região e orquestrar scripts manuais para alterar os registros do Route 53 em caso de falha.</span>
+                        </button>
+                        <button class="quiz-option" onclick="checkAnswer('q3', this, false, 'Incorreto. Placement Groups do tipo Cluster agrupam as instâncias de computação próximas uma das outras na mesma AZ física para obter comunicações de rede de baixa latência, o que na verdade aumenta o risco concentrado.')">
+                            <span class="option-letter">D</span>
+                            <span>Colocar a instância atual em um Placement Group de proximidade (Cluster) para isolar o hardware dentro do mesmo datacenter.</span>
+                        </button>
+                    </div>
+                    <div class="quiz-explanation" id="exp-q3">
+                        <h4><i class="fa-solid fa-circle-info"></i> Explicação Arquitetural</h4>
+                        <p id="exp-text-q3"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 13: Quiz Q4 - Security Groups -->
+        <div class="slide" id="slide-13">
+            <div class="slide-footer-logo"><i class="fa-solid fa-graduation-cap"></i> SAA-C03</div>
+            <h2 class="slide-title">Questão 4: Rede e Segurança por Privilégio Mínimo</h2>
+            <div class="content-area">
+                <div class="quiz-container">
+                    <div class="quiz-question">
+                        Uma infraestrutura web possui servidores públicos em uma subrede pública que precisam se comunicar com bancos de dados relacionais executados em instâncias EC2 dentro de uma subrede privada. Seguindo o princípio do privilégio mínimo de segurança na nuvem, como o arquiteto deve gerenciar as regras dos Security Groups?
+                    </div>
+                    <div class="quiz-options" id="options-q4">
+                        <button class="quiz-option" onclick="checkAnswer('q4', this, true, 'Correto! Esta é uma das melhores práticas de arquitetura da AWS. O Security Group do banco de dados não escuta blocos de IP fixos (que podem mudar), mas sim o ID do Security Group dos servidores web. Apenas instâncias associadas ao SG Web podem bater na porta do banco.')">
+                            <span class="option-letter">A</span>
+                            <span>Configurar o Security Group do banco de dados para liberar tráfego na porta do banco (ex: 3306) vindo especificamente do ID do Security Group da camada web.</span>
+                        </button>
+                        <button class="quiz-option" onclick="checkAnswer('q4', this, false, 'Incorreto. Liberar todo o tráfego interno (0.0.0.0/0 ou toda a rede da VPC) viola drasticamente o princípio de menor privilégio, permitindo que qualquer outra instância invada o banco de dados.')">
+                            <span class="option-letter">B</span>
+                            <span>Liberar o tráfego da porta 3306 no banco para aceitar conexões vindas do bloco CIDR total da VPC, permitindo todo o tráfego de subredes internas.</span>
+                        </button>
+                        <button class="quiz-option" onclick="checkAnswer('q4', this, false, 'Incorreto. Associar o mesmo grupo de segurança faz com que as configurações de firewall para a camada externa (porta 80/443 expostas) fiquem anexadas à camada de banco de dados, criando vulnerabilidades sérias.')">
+                            <span class="option-letter">C</span>
+                            <span>Colocar as instâncias do servidor web e do banco de dados compartilhando o mesmo Security Group com tráfego bidirecional irrestrito.</span>
+                        </button>
+                        <button class="quiz-option" onclick="checkAnswer('q4', this, false, 'Incorreto. Network ACLs são barreiras stateless que operam no nível da subrede (não no nível de instâncias individuais) e não conseguem referenciar IDs de Security Groups, tornando a administração manual ineficiente.')">
+                            <span class="option-letter">D</span>
+                            <span>Configurar regras rígidas de rede stateless em Network Access Control Lists (NACLs) bloqueando todo o tráfego e liberando o IP elástico de cada webserver.</span>
+                        </button>
+                    </div>
+                    <div class="quiz-explanation" id="exp-q4">
+                        <h4><i class="fa-solid fa-circle-info"></i> Explicação Arquitetural</h4>
+                        <p id="exp-text-q4"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 14: Q&A / Closing -->
+        <div class="slide" id="slide-14" style="background-image: linear-gradient(rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.95)), url('http://googleusercontent.com/image_collection/image_retrieval/1926917886799456828'); background-size: cover;">
+            <div class="qa-layout">
+                <h2 style="font-size: 64px; color:#FF9900; margin-bottom:10px;">Dúvidas?</h2>
+                <p class="subtitle" style="color: #ffffff;">Semana 1 concluída com sucesso!</p>
+                <div style="margin-top: 60px; font-size: 22px;">
+                    <p style="margin-bottom: 15px;"><i class="fa-solid fa-calendar-days" style="color: #FF9900; margin-right: 10px;"></i> Próxima Apresentação: <strong>Armazenamento Inteligente com Amazon S3</strong></p>
+                    <p style="font-size: 16px; color:#94a3b8;"><i class="fa-solid fa-circle-info" style="color:#FF9900;"></i> Revise as ferramentas, console e laboratórios práticos disponíveis em nosso portal local.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM CONTROLS -->
+        <div class="slide-controls">
+            <button class="nav-btn" id="prev-btn" onclick="prevSlide()"><i class="fas fa-chevron-left"></i> Anterior</button>
+            <div class="progress-indicator" id="progress-indicator">Slide 1 de 14</div>
+            <button class="nav-btn" id="next-btn" onclick="nextSlide()">Próximo <i class="fas fa-chevron-right"></i></button>
+        </div>
+
+    </div>
+
+    <script>
+        // SLIDE NAVIGATION CONTROLS
+        let currentSlide = 1;
+        const totalSlides = 14;
+
+        function updateSlide() {
+            // Hide all slides
+            for(let i = 1; i <= totalSlides; i++) {
+                document.getElementById(`slide-${i}`).classList.remove('active');
+            }
+            // Show current
+            document.getElementById(`slide-${currentSlide}`).classList.add('active');
+            
+            // Update indicator
+            document.getElementById('progress-indicator').innerText = `Slide ${currentSlide} de ${totalSlides}`;
+            
+            // Handle buttons state
+            document.getElementById('prev-btn').disabled = (currentSlide === 1);
+            document.getElementById('next-btn').disabled = (currentSlide === totalSlides);
+        }
+
+        function nextSlide() {
+            if(currentSlide < totalSlides) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if(currentSlide > 1) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        // KEYBOARD NAVIGATION
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight' || event.key === ' ') {
+                event.preventDefault(); // prevent space from scrolling down the page
+                nextSlide();
+            } else if (event.key === 'ArrowLeft') {
+                event.preventDefault();
+                prevSlide();
+            }
+        });
+
+        // INTERACTIVE QUIZ FUNCTIONALITY
+        function checkAnswer(questionId, selectedOption, isCorrect, explanationText) {
+            const optionsContainer = document.getElementById(`options-${questionId}`);
+            
+            // Lock options so user can't select other ones
+            optionsContainer.classList.add('locked');
+            
+            // Highlight options
+            const optionsList = optionsContainer.getElementsByClassName('quiz-option');
+            for(let opt of optionsList) {
+                if (opt === selectedOption) {
+                    opt.classList.add(isCorrect ? 'correct' : 'incorrect');
+                } else {
+                    // If it is the correct one, highlight it as well to show correct answer
+                    // We can check if it has the true value in its onclick (but keep it simple for now)
+                }
+            }
+
+            // Find and highlight correct answer if wrong option was clicked
+            if(!isCorrect) {
+                for(let opt of optionsList) {
+                    if (opt.getAttribute('onclick').includes('true')) {
+                        opt.classList.add('correct');
+                    }
+                }
+            }
+
+            // Show explanation
+            const explanationDiv = document.getElementById(`exp-${questionId}`);
+            const explanationTextP = document.getElementById(`exp-text-${questionId}`);
+            explanationTextP.innerText = explanationText;
+            explanationDiv.style.display = 'block';
+        }
+
+        // Initialize presentation
+        updateSlide();
+    </script>
+</body>
+</html>
