@@ -427,45 +427,61 @@
             </div>
         </div>
 
-        <!-- Slide 9: Section Title - Simulado -->
+
         <div class="slide" id="slide-9">
-            <div class="section-title-layout">
-                <h2>AWS Architect Simulation</h2>
-                <p>Simulado com questões interativas reais do exame SAA-C03</p>
-                <hr>
+            <div class="slide-footer-logo"><i class="fa-solid fa-server"></i> Apache</div>
+            <h2 class="slide-title">Configuração do Serviço HTTP</h2>
+            <div class="content-area">
+                <div class="two-column">
+                    <div class="bullet-list">
+                        <ul>
+                            <li><i class="fa-solid fa-terminal"></i> <strong>Passo 1:</strong> <code>sudo dnf update -y</code></li>
+                            <li><i class="fa-solid fa-terminal"></i> <strong>Passo 2:</strong> <code>sudo dnf install httpd -y</code></li>
+                            <li><i class="fa-solid fa-terminal"></i> <strong>Passo 3:</strong> <code>sudo systemctl start httpd</code></li>
+                            <li><i class="fa-solid fa-terminal"></i> <strong>Passo 4:</strong> <code>sudo systemctl enable httpd</code></li>
+                            <li><i class="fa-solid fa-user-gear"></i> <strong>Passo 5:</strong> Configure permissões <code>chown -R ec2-user:apache /var/www</code></li>
+                            <li><i class="fa-solid fa-shield"></i> <strong>Passo 6:</strong> Libere as portas <strong>80</strong> e <strong>443</strong> no Security Group.</li>
+                        </ul>
+                    </div>
+                    <div class="image-wrapper">
+                        <img src="http://googleusercontent.com/image_collection/image_retrieval/15540452129413511954" alt="Terminal Linux Apache">
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Slide 10: Quiz Q1 - EC2 Pricing -->
         <div class="slide" id="slide-10">
-            <div class="slide-footer-logo"><i class="fa-solid fa-graduation-cap"></i> SAA-C03</div>
-            <h2 class="slide-title">Questão 1: Computação Otimizada e Custo</h2>
+            <div class="slide-footer-logo"><i class="fa-solid fa-code"></i> Deploy</div>
+            <h2 class="slide-title">Publicando o index.html</h2>
             <div class="content-area">
-                <div class="quiz-container">
-                    <div class="quiz-question">
-                        Uma empresa executa uma aplicação comercial crítica no Amazon EC2 com uma carga de trabalho constante de 24/7 que consome 4 instâncias. Durante o horário comercial padrão, a demanda aumenta previsivelmente, exigindo até 8 instâncias adicionais. Qual combinação de modelos de compra do EC2 é a mais econômica e confiável para este cenário?
+                <div class="two-column">
+                    <div>
+                        <h3 style="margin-bottom: 15px; color: #FF9900;">Instruções de Deploy:</h3>
+                        <ol style="margin-left: 25px; color: #cbd5e1; font-size: 17px;">
+                            <li>Navegue até o diretório: <code>cd /var/www/html</code></li>
+                            <li>Crie o arquivo: <code>sudo nano index.html</code></li>
+                            <li>Cole o conteúdo do código anexo.</li>
+                            <li>Pressione <strong>CTRL + O</strong> (Salvar) e <strong>CTRL + X</strong> (Sair).</li>
+                            <li>Acesse o <strong>IP Público</strong> no seu navegador.</li>
+                        </ol>
                     </div>
-                    <div class="quiz-options" id="options-q1">
-                        <button class="quiz-option" onclick="checkAnswer('q1', this, false, 'Incorreto. Usar instâncias Spot para a carga principal de 24/7 é um risco arquitetural grave, pois a AWS pode encerrar suas instâncias com apenas 2 minutos de aviso prévio.')">
-                            <span class="option-letter">A</span>
-                            <span>Instâncias Spot para a carga estável de 4 instâncias e On-Demand para as 8 instâncias adicionais de pico.</span>
-                        </button>
-                        <button class="quiz-option" onclick="checkAnswer('q1', this, true, 'Correto! O Savings Plan garante descontos de até 72% para as instâncias de uso constante 24/7, enquanto as instâncias On-Demand dão a estabilidade e previsibilidade necessárias para os picos temporários sem risco de interrupção abrupta.')">
-                            <span class="option-letter">B</span>
-                            <span>Savings Plan/Instâncias Reservadas para as 4 instâncias constantes e instâncias On-Demand para os picos de demanda.</span>
-                        </button>
-                        <button class="quiz-option" onclick="checkAnswer('q1', this, false, 'Incorreto. Usar apenas instâncias Spot traria grande economia, mas violaria o requisito de confiabilidade exigido para uma aplicação comercial crítica.')">
-                            <span class="option-letter">C</span>
-                            <span>Utilizar apenas instâncias Spot para todo o parque (12 instâncias) por meio de um grupo de Auto Scaling.</span>
-                        </button>
-                        <button class="quiz-option" onclick="checkAnswer('q1', this, false, 'Incorreto. Comprar instâncias reservadas para o pico máximo de 12 instâncias geraria ociosidade e desperdício de custo durante as noites e finais de semana.')">
-                            <span class="option-letter">D</span>
-                            <span>Adquirir Instâncias Reservadas para a capacidade máxima de 12 instâncias para garantir o menor preço e capacidade estável.</span>
-                        </button>
-                    </div>
-                    <div class="quiz-explanation" id="exp-q1">
-                        <h4><i class="fa-solid fa-circle-info"></i> Explicação Arquitetural</h4>
-                        <p id="exp-text-q1"></p>
+                    <div class="code-preview">
+&lt;!DOCTYPE html&gt;
+&lt;html lang="pt-BR"&gt;
+&lt;head&gt;
+    &lt;title&gt;Distrito Cloud - Solutis&lt;/title&gt;
+    &lt;style&gt;
+        header { background: linear-gradient(135deg, #0b1f3b 0%, #1e3a8a 100%); }
+        .badge { background-color: #00cbc6; color: #0b1f3b; }
+        /* ... Estilos fornecidos no anexo ... */
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;Distrito Cloud&lt;/h1&gt;
+    &lt;div class="badge"&gt;Servidor Apache HTTP Ativo&lt;/div&gt;
+    &lt;p&gt;Página de Teste do Ambiente...&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
                     </div>
                 </div>
             </div>
