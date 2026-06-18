@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arquitetura Cloud - Workshop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;700;800;900&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* SETUP & CORE THEME DESIGN (Deep Cosmic Purple & Electric Blue) */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            background-color: #030611; 
+            color: #f1f5f9;
+            font-family: 'Lato', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* PRESENTATION WRAPPER */
+        .presentation-wrapper {
+            position: relative;
+            width: 1280px;
+            height: 720px;
+            background-color: #070b19;
+            border-radius: 16px;
+            box-shadow: 0 25px 60px -15px rgba(0, 210, 255, 0.12);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #1e293b;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: calc(100% - 60px);
+            padding: 40px 50px; /* Reduced padding to make room for larger text */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            z-index: 2;
+        }
+
+        /* Decorative Background Glares */
+        .slide::before {
+            content: '';
+            position: absolute;
+            top: -15%;
+            right: -15%;
+            width: 45%;
+            height: 45%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .slide > * { position: relative; z-index: 2; }
+
+        /* TYPOGRAPHY */
+        h1, h2, h3 { font-family: 'Urbanist', sans-serif; color: #ffffff; }
+        h1 { font-size: 60px; line-height: 1.15; font-weight: 900; margin-bottom: 20px; }
+        .slide-title { 
+            font-size: 38px; /* Increased from 34px */
+            font-weight: 800; 
+            margin-bottom: 20px; /* Reduced from 25px */
+            text-align: left; 
+            width: 100%; 
+            border-left: 6px solid #00d2ff; 
+            padding-left: 20px; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        p, li { font-size: 20px; line-height: 1.6; color: #cbd5e1; } /* Increased base from 17px */
+        strong { color: #00d2ff; }
+        .aws-color { color: #ff9900 !important; }
+
+        .content-area { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; }
+
+        /* BOTTOM CONTROLS & TIMELINE */
+        .slide-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background-color: #040712;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            border-top: 1px solid #141b2d;
+            z-index: 10;
+        }
+
+        .nav-btn {
+            background-color: #11182c;
+            color: #f8fafc;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Urbanist', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #1e293b;
+        }
+
+        .nav-btn:hover { background-color: #00d2ff; color: #030611; border-color: #00d2ff; }
+        .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .progress-indicator { font-family: 'Urbanist', sans-serif; font-size: 14px; color: #64748b; font-weight: 600; }
+
+        /* SPEAKER NOTES DRAWER */
+        .speaker-notes-btn {
+            background-color: #1e293b;
+            color: #e2e8f0;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Urbanist', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+            border: 1px solid #334155;
+        }
+        .speaker-notes-btn:hover { background-color: #334155; }
+
+        .notes-panel {
+            position: absolute;
+            bottom: 60px;
+            left: 0;
+            width: 100%;
+            max-height: 200px;
+            background-color: #020408;
+            border-top: 2px solid #1e293b;
+            padding: 20px 40px;
+            overflow-y: auto;
+            z-index: 9;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .notes-panel.open { transform: translateY(0); }
+        .notes-panel h4 { font-family: 'Urbanist', sans-serif; color: #3b82f6; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .notes-panel p { font-size: 13.5px; color: #94a3b8; }
+
+        /* LAYOUT STYLES */
+        .title-layout { text-align: center; align-items: center; justify-content: center; height: 100%; display: flex; flex-direction: column; }
+        .title-layout h1 span { background: linear-gradient(135deg, #00d2ff, #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { font-size: 24px; color: #94a3b8; margin-top: 15px; max-width: 800px; }
+
+        .section-title-layout { align-items: center; justify-content: center; text-align: center; height: 100%; display: flex; flex-direction: column; }
+        .section-title-layout h2 { font-size: 52px; margin-bottom: 10px; }
+        .section-title-layout p { font-size: 20px; color: #64748b; }
+        .section-title-layout hr { width: 100px; height: 5px; background: linear-gradient(90deg, #00d2ff, #6366f1); border: none; margin-top: 20px; border-radius: 3px; }
+
+        .tiled-content { display: flex; gap: 20px; width: 100%; align-items: stretch; }
+        .tile { flex: 1; background: #0b1122; padding: 25px; border-radius: 12px; border-bottom: 4px solid #00d2ff; border: 1px solid #1e293b; }
+        .tile .icon { font-size: 36px; color: #00d2ff; margin-bottom: 12px; }
+        .tile h3 { font-size: 24px; margin-bottom: 10px; } /* Increased from 20px */
+
+        .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; width: 100%; align-items: center; }
+        .two-column.tiled > div { background: #0b1122; padding: 25px; border-radius: 12px; border: 1px solid #1e293b; }
+        .two-column.tiled h3 { margin-bottom: 12px; font-size: 24px; } /* Increased from 20px */
+
+        .bullet-list { list-style: none; }
+        .bullet-list li { position: relative; padding-left: 30px; margin-bottom: 12px; font-size: 19px; } /* Increased from 16.5px */
+        .bullet-list i { position: absolute; left: 0; top: 4px; color: #00d2ff; font-size: 18px; }
+
+        .grid-3x2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; }
+        .grid-card { background: #0b1122; padding: 18px; border-radius: 12px; border: 1px solid #1e293b; transition: all 0.2s; }
+        .grid-card:hover { border-color: #00d2ff; transform: translateY(-3px); }
+        .grid-card h4 { font-family: 'Urbanist', sans-serif; color: #ff9900; font-size: 22px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; } /* Increased from 18px */
+        .grid-card p { font-size: 17px; color: #94a3b8; } /* Increased from 14px */
+
+        .table-layout table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .table-layout th { background: linear-gradient(135deg, #0072ff, #00d2ff); color: #05070f; padding: 12px 15px; text-align: left; font-size: 19px; font-family: 'Urbanist', sans-serif; font-weight: 800; } /* Increased from 18px */
+        .table-layout td { padding: 12px 15px; border-bottom: 1px solid #1e293b; font-size: 17px; } /* Increased from 16px */
+        .table-layout tr:nth-child(even) { background: rgba(255,255,255,0.01); }
+
+        .image-wrapper { width: 100%; height: 350px; border-radius: 12px; overflow: hidden; border: 1px solid #1e293b; background-color: #05070f; }
+
+        .slide-footer-logo {
+            position: absolute;
+            top: 40px;
+            right: 60px;
+            font-family: 'Urbanist', sans-serif;
+            font-weight: 700;
+            color: #00d2ff;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="presentation-wrapper">
+        
+        <!-- Slide 1: Title Slide -->
+        <div class="slide active" id="slide-1" style="background-image: linear-gradient(rgba(3, 6, 17, 0.92), rgba(3, 6, 17, 0.92)), url('http://googleusercontent.com/image_collection/image_retrieval/13493498679771323716'); background-size: cover;">
+            <div class="title-layout">
+                <div style="background: rgba(0, 210, 255, 0.1); padding: 6px 16px; border-radius: 99px; border: 1px solid rgba(0, 210, 255, 0.2); font-size: 13px; font-weight: 700; color: #00d2ff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;">Meetup Solutis • Distrito Cloud</div>
+                <h1>Arquitetura Cloud  - Workshop</h1>
+                <p class="subtitle" style="font-size: 24px;">Aprenda a mapear e estruturar projetos elásticos, seguros, inovadores e focados em carreira prática</p>
+            </div>
+        </div>
+
+        <!-- Slide 2: Section Title - The Problem -->
+        <div class="slide" id="slide-2">
+            <div class="section-title-layout">
+                <h2>Parte 1: A Era Pré-Nuvem</h2>
+                <p>Os desafios clássicos de infraestrutura e a rigidez do Datacenter Físico (On-Premises)</p>
+                <hr>
+            </div>
+        </div>
+
+        <!-- Slide 3: On-Premises Bottlenecks -->
+        <div class="slide" id="slide-3">
+            <div class="slide-footer-logo"><i class="fa-solid fa-server"></i> On-Premises</div>
+            <h2 class="slide-title">A Dor do Datacenter Tradicional</h2>
+            <div class="content-area">
+                <div class="tiled-content">
+                    <div class="tile">
+                        <div class="icon"><i class="fa-solid fa-wallet"></i></div>
+                        <h3>CapEx Altíssimo</h3>
+                        <p style="font-size: 18px;">Pesado investimento inicial. Você precisa comprar racks de servidores físicos, cabeamento e refrigeração sem saber se o produto vai decolar no mercado.</p>
+                    </div>
+                    <div class="tile">
+                        <div class="icon"><i class="fa-solid fa-hourglass-half"></i></div>
+                        <h3>Provisionamento Lento</h3>
+                        <p style="font-size: 18px;">Tempo de entrega demorado. Comprar, importar, liberar na alfândega e montar servidores físicos consome semanas ou meses de burocracia técnica.</p>
+                    </div>
+                    <div class="tile">
+                        <div class="icon"><i class="fa-solid fa-arrow-up-down-left-right"></i></div>
+                        <h3>Desperdício ou Gargalo</h3>
+                        <p style="font-size: 18px;">Infraestrutura estática. Se a demanda cresce, seu site cai por falta de hardware. Se a demanda despenca, você paga manutenção de máquinas ociosas.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Section Title - Cloud definition -->
+        <div class="slide" id="slide-4">
+            <div class="section-title-layout">
+                <h2>Parte 2: O que é a Nuvem?</h2>
+                <p>Muito mais do que apenas "o computador de outra pessoa"</p>
+                <hr>
+            </div>
+        </div>
+
+        <!-- Slide 5: What is Cloud Computing? -->
+        <div class="slide" id="slide-5">
+            <div class="slide-footer-logo"><i class="fa-solid fa-cloud"></i> Fundamentos</div>
+            <h2 class="slide-title">A Definição Prática de Nuvem</h2>
+            <div class="content-area">
+                <div class="two-column">
+                    <div>
+                        <p style="font-size: 22px; line-height: 1.7; margin-bottom: 20px;">
+                            "Computação em nuvem é a entrega de recursos de TI sob demanda através da Internet com precificação de **pagamento conforme o uso** (Pay-as-you-go)."
+                        </p>
+                        <p style="font-size: 18px; color: #94a3b8;">
+                            Em vez de comprar, possuir e manter datacenters físicos, você acessa recursos computacionais de infraestrutura de forma virtualizada no momento exato em que precisa deles.
+                        </p>
+                    </div>
+                    <div style="background: #0b1122; padding: 30px; border-radius: 12px; border: 1px solid #1e293b;">
+                        <h3 style="font-size: 22px; color:#00d2ff; margin-bottom: 15px;">5 Características Essenciais (NIST):</h3>
+                        <ul class="bullet-list" style="font-size: 17px;">
+                            <li><i class="fa-solid fa-circle-check"></i> Auto-serviço sob demanda.</li>
+                            <li><i class="fa-solid fa-circle-check"></i> Acesso amplo à rede mundial.</li>
+                            <li><i class="fa-solid fa-circle-check"></i> Compartilhamento de recursos em pool (Multi-tenant).</li>
+                            <li><i class="fa-solid fa-circle-check"></i> Elasticidade rápida de recursos.</li>
+                            <li><i class="fa-solid fa-circle-check"></i> Serviço de uso medido e transparente.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Six Advantages -->
+        <div class="slide" id="slide-6">
+            <div class="slide-footer-logo"><i class="fa-solid fa-dollar-sign"></i> Vantagens</div>
+            <h2 class="slide-title">As 6 Grandes Vantagens de Negócio</h2>
+            <div class="content-area">
+                <div class="table-layout">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Vantagem de Negócio</th>
+                                <th>O que significa na prática?</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Trocar CapEx por OpEx</strong></td>
+                                <td>Deixe de imobilizar despesas de capital fixas e adote custos operacionais variáveis conforme as necessidades do mês.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Beneficiar-se de Economia de Escala</strong></td>
+                                <td>Provedores mundiais adquirem milhões de hardwares, barateando os preços para os pequenos clientes.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Parar de tentar adivinhar capacidade</strong></td>
+                                <td>Elimine desperdícios de provisionar servidores superdimensionados para picos ocasionais.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Aumentar velocidade e agilidade</strong></td>
+                                <td>Ative novos ambientes completos de desenvolvimento ou homologação em menos de 5 minutos por APIs.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Parar de gastar mantendo datacenters</strong></td>
+                                <td>Foque seus times de TI nas soluções de negócio e produtos em vez de manutenção de hardware físico.</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Tornar-se global em minutos</strong></td>
+                                <td>Hospede seus microsserviços perto de clientes mundiais com baixíssima latência de entrega.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Section Title - Service Models -->
+        <div class="slide" id="slide-7">
+            <div class="section-title-layout">
+                <h2>Parte 3: Modelos de Serviço e Implantação</h2>
+                <p>Níveis de controle, as formas de implantação de rede e a governança de responsabilidade</p>
+                <hr>
+            </div>
+        </div>
+
+        <!-- Slide 8: IaaS vs PaaS vs SaaS -->
+        <div class="slide" id="slide-8">
+            <div class="slide-footer-logo"><i class="fa-solid fa-layer-group"></i> Modelos</div>
+            <h2 class="slide-title">Modelos de Serviço (IaaS, PaaS, SaaS)</h2>
+            <div class="content-area">
+                <div class="tiled-content">
+                    <div class="tile">
+                        <div class="icon"><i class="fa-solid fa-cubes"></i></div>
+                        <h3>IaaS</h3>
+                        <p style="font-size: 15px; text-transform: uppercase; color: #00d2ff; font-weight: 700; margin-bottom: 8px;">Infrastructure as a Service</p>
+                        <p style="font-size: 17px;">Você aluga os recursos brutos básicos de rede e computação. Você instala e atualiza o S.O. e gerencia a segurança interna.</p>
+                        <p style="margin-top: 15px; font-size: 16px; color: #94a3b8;"><strong>Exemplos:</strong> AWS EC2, Azure VMs, GCP Compute Engine.</p>
+                    </div>
+                    <div class="tile">
+                        <div class="icon"><i class="fa-solid fa-window-restore"></i></div>
+                        <h3>PaaS</h3>
+                        <p style="font-size: 15px; text-transform: uppercase; color: #00d2ff; font-weight: 700; margin-bottom: 8px;">Platform as a Service</p>
+                        <p style="font-size: 17px;">O provedor remove a preocupação com hardware, redes internas, sistemas operacionais e patches. Você apenas se preocupa com o deploy do código.</p>
+                        <p style="margin-top: 15px; font-size: 16px; color: #94a3b8;"><strong>Exemplos:</strong> AWS Elastic Beanstalk, Heroku, Vercel.</p>
+                    </div>
+                    <div class="tile">
+                        <div class="icon"><i class="fa-solid fa-mobile-screen"></i></div>
+                        <h3>SaaS</h3>
+                        <p style="font-size: 15px; text-transform: uppercase; color: #00d2ff; font-weight: 700; margin-bottom: 8px;">Software as a Service</p>
+                        <p style="font-size: 17px;">Uma aplicação pronta e completa de ponta a ponta desenvolvida por terceiros. O cliente apenas configura contas e acessa via web ou aplicativo.</p>
+                        <p style="margin-top: 15px; font-size: 16px; color: #94a3b8;"><strong>Exemplos:</strong> Microsoft 365, Gmail, Salesforce, Slack.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: Deployment Models -->
+        <div class="slide" id="slide-9">
+            <div class="slide-footer-logo"><i class="fa-solid fa-network-wired"></i> Implantação</div>
+            <h2 class="slide-title">Modelos de Implantação</h2>
+            <div class="content-area">
+                <div class="two-column tiled">
+                    <div>
+                        <h3><i class="fa-solid fa-globe" style="color:#00d2ff; margin-right:10px;"></i> Pública vs. Privada</h3>
+                        <p style="font-size: 18px; margin-bottom: 10px;">A **Nuvem Pública** pertence e é operada por provedores gigantes comerciais (AWS, Microsoft, Google) entregando recursos escaláveis via internet pública de forma isolada e segura para milhares de clientes.</p>
+                        <p style="font-size: 18px;">A **Nuvem Privada** é de uso estritamente exclusivo de uma única corporação, construída em datacenters próprios locais ou contratados de forma isolada.</p>
+                    </div>
+                    <div>
+                        <h3><i class="fa-solid fa-code-merge" style="color:#00d2ff; margin-right:10px;"></i> O Caminho Híbrido</h3>
+                        <p style="font-size: 18px; margin-bottom: 10px;">A **Nuvem Híbrida** estabelece uma conexão integrada, transparente e orquestrada entre o legado on-premises e os recursos da nuvem pública externa.</p>
+                        <p style="font-size: 18px;"><strong>Uso Ideal:</strong> Migrações graduais de grandes sistemas corporativos, backups externos e atendimento de restrições rígidas de conformidade de dados locais.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: Shared Responsibility Model -->
+        <div class="slide" id="slide-10">
+            <div class="slide-footer-logo"><i class="fa-solid fa-shield-halved"></i> Segurança</div>
+            <h2 class="slide-title">Modelo de Responsabilidade Compartilhada</h2>
+            <div class="content-area">
+                <div class="two-column">
+                    <div>
+                        <p style="font-size: 22px; line-height: 1.7; margin-bottom: 15px;">
+                            Segurança na Nuvem é um **esforço mútuo**.
+                        </p>
+                        <ul class="bullet-list" style="font-size: 18px;">
+                            <li><i class="fa-solid fa-shield-halved" style="color: #00d2ff;"></i> <strong>Responsabilidade DO Provedor:</strong> Segurança DA Nuvem (Proteção física dos datacenters, segurança contra incêndios, hosts hipervisores, resfriamento e conectores físicos globais).</li>
+                            <li><i class="fa-solid fa-user-lock" style="color: #3b82f6;"></i> <strong>Responsabilidade DO Cliente:</strong> Segurança NA Nuvem (Atualização de SO em VMs IaaS, senhas fracas, criptografia de dados, regras de firewall e gerenciamento de acessos do time).</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <div class="image-wrapper">
+                            <div style="background-color: #0c121e; padding: 40px; text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: center; border-radius:12px; border: 1px dashed #334155;">
+                                <div style="color: #3b82f6; font-weight: 700; border: 1px solid #3b82f6; padding: 12px; margin-bottom: 12px; border-radius: 6px; font-size: 15px;">CLIENTE: Segurança NA Nuvem<br><span style="font-size: 12px; font-weight: 400; color: #94a3b8;">Criptografia, Dados, Sistemas Operacionais, Configurações de Firewall</span></div>
+                                <div style="color: #00d2ff; font-weight: 700; border: 1px solid #00d2ff; padding: 12px; border-radius: 6px; font-size: 15px;">PROVEDOR: Segurança DA Nuvem<br><span style="font-size: 12px; font-weight: 400; color: #94a3b8;">Segurança Física, Redes de Borda, Infraestrutura, Virtualização</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 11: Section Title - AWS Services -->
+        <div class="slide" id="slide-11">
+            <div class="section-title-layout">
+                <h2>Parte 4: O Ecossistema de Serviços (Mapeamento)</h2>
+                <p>Navegando nos principais pilares práticos de arquitetura com referência técnica da AWS</p>
+                <hr>
+            </div>
+        </div>
+
+        <!-- Slide 12: AWS Services - Core pillars 1 -->
+        <div class="slide" id="slide-12">
+            <div class="slide-footer-logo"><i class="fa-brands fa-aws"></i> AWS Tech Stack</div>
+            <h2 class="slide-title">Computação, Serverless & Containers</h2>
+            <div class="content-area">
+                <div class="tiled-content">
+                    <div class="tile">
+                        <div class="icon"><i class="fa-solid fa-server"></i></div>
+                        <h3>Instâncias Elásticas (EC2)</h3>
+                        <p style="font-size: 17px; margin-top: 5px;">Máquinas virtuais completas onde você escolhe a família de hardware, memória RAM e tem controle total do SO. Ideal para sistemas legados e banco de dados personalizados.</p>
+                    </div>
+                    <div class="tile text-indigo-400">
+                        <div class="icon"><i class="fa-solid fa-bolt"></i></div>
+                        <h3>Computação Serverless (Lambda)</h3>
+                        <p style="font-size: 17px; margin-top: 5px;">Esqueça a gerência de máquinas ou patches. Execute código em milissegundos apenas quando eventos acontecem. Escalabilidade automática para milhões de acessos e cobrança sob demanda.</p>
+                    </div>
+                    <div class="tile">
+                        <div class="icon"><i class="fa-solid fa-cubes"></i></div>
+                        <h3>Containers (ECS & EKS)</h3>
+                        <p style="font-size: 17px; margin-top: 5px;">Padronize seus ambientes. O <strong>ECS</strong> oferece gerenciamento simples e nativo de contêineres Docker, enquanto o <strong>EKS</strong> entrega o poder do Kubernetes de forma totalmente gerenciada.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 13: AWS Services - Core pillars 2 -->
+        <div class="slide" id="slide-13">
+            <div class="slide-footer-logo"><i class="fa-brands fa-aws"></i> AWS Tech Stack</div>
+            <h2 class="slide-title">Armazenamento & Banco de Dados</h2>
+            <div class="content-area">
+                <div class="grid-3x2">
+                    <div class="grid-card">
+                        <h4><i class="fa-solid fa-box-open"></i> Buckets (S3)</h4>
+                        <p>Armazenamento de objetos infinito, durável e com alta conformidade. Essencial para hospedagem estática, data lakes e backups corporativos baratos.</p>
+                    </div>
+                    <div class="grid-card">
+                        <h4><i class="fa-solid fa-database"></i> Banco Relacional (RDS)</h4>
+                        <p>Serviço gerenciado de MySQL, PostgreSQL e SQL Server. Esqueça rotinas manuais de backup, atualizações e configurações de alta disponibilidade Multi-AZ.</p>
+                    </div>
+                    <div class="grid-card">
+                        <h4><i class="fa-solid fa-bolt-lightning"></i> NoSQL (DynamoDB)</h4>
+                        <p>Banco de dados chave-valor serverless desenhado para aplicações web de altíssima escala, garantindo tempos de resposta estáveis abaixo de 10ms.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 14: AWS Services - Core pillars 3 -->
+        <div class="slide" id="slide-14">
+            <div class="slide-footer-logo"><i class="fa-brands fa-aws"></i> AWS Tech Stack</div>
+            <h2 class="slide-title">Desacoplamento & Mensageria</h2>
+            <div class="content-area">
+                <div class="two-column tiled">
+                    <div>
+                        <h3><i class="fa-solid fa-envelope-open-text" style="color:#ff9900; margin-right:10px;"></i> Mensageria com SQS & SNS</h3>
+                        <p style="font-size: 17px; margin-bottom: 10px;">O <strong>Amazon SQS</strong> é um barramento de filas de mensagens altamente durável que desacopla e escala microsserviços de forma assíncrona, prevenindo lentidão ou queda em picos.</p>
+                        <p style="font-size: 17px;">O <strong>Amazon SNS</strong> envia notificações em larga escala no formato Pub/Sub direto a múltiplos inscritos ou gatilhos de computação.</p>
+                    </div>
+                    <div>
+                        <h3><i class="fa-solid fa-circle-nodes" style="color:#ff9900; margin-right:10px;"></i> Por que desacoplar?</h3>
+                        <p style="font-size: 17px; margin-bottom: 10px;">Num sistema acoplado tradicional, se a camada de faturamento falhar, o cliente não consegue comprar nada e a transação é perdida.</p>
+                        <p style="font-size: 17px;"><strong>Resiliência:</strong> Ao usar o SQS, o pedido do cliente fica guardado em segurança na fila e é processado assim que a camada financeira se recuperar do gargalo.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 15: Section Title - Cloud & AI -->
+        <div class="slide" id="slide-15">
+            <div class="section-title-layout">
+                <h2>Parte 5: Tendências e Fronteiras Tecnológicas</h2>
+                <p>O papel propulsor da infraestrutura de nuvem na revolução da IA Moderna e o cenário Multicloud</p>
+                <hr>
+            </div>
+        </div>
+
+        <!-- Slide 16: Why Cloud Enabled AI -->
+        <div class="slide" id="slide-16">
+            <div class="slide-footer-logo"><i class="fa-solid fa-brain"></i> IA & Cloud</div>
+            <h2 class="slide-title">A Nuvem como Motor da IA</h2>
+            <div class="content-area">
+                <div class="tiled-content">
+                    <div class="tile">
+                        <div class="icon"><i class="fa-solid fa-microchip"></i></div>
+                        <h3>Processamento de GPUs Elásticas</h3>
+                        <p style="font-size: 17px; margin-top: 5px;">O treinamento de modelos de linguagem e redes neurais profundas necessita de supercomputadores de última geração. Na nuvem, você aluga clusters de GPUs por frações de custo de horas sem comprá-las de antemão.</p>
+                    </div>
+                    <div class="tile">
+                        <div class="icon"><i class="fa-solid fa-folder-tree"></i></div>
+                        <h3>Big Data & Retenção</h3>
+                        <p style="font-size: 17px; margin-top: 5px;">Modelos de IA modernos dependem de volumes gigantescos de dados históricos estruturados e não estruturados. Repositórios S3 permitiram o armazenamento elástico e ultra-barato dessas bases massivas.</p>
+                    </div>
+                    <div class="tile">
+                        <div class="icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                        <h3>Modelos de Fundação (APIs)</h3>
+                        <p style="font-size: 17px; margin-top: 5px;">Com serviços como o <strong>Amazon Bedrock</strong>, você não precisa ser um cientista de dados ou treinar IA do zero. Desenvolvedores de qualquer nível podem consumir LLMs via APIs prontas de mercado com segurança.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 17: Multicloud Strategy -->
+        <div class="slide" id="slide-17">
+            <div class="slide-footer-logo"><i class="fa-solid fa-network-wired"></i> Arquitetura</div>
+            <h2 class="slide-title">Estratégias de Arquitetura Multicloud</h2>
+            <div class="content-area">
+                <div class="two-column">
+                    <div>
+                        <h3 style="font-size: 22px; color:#00d2ff; margin-bottom: 15px;">Por que usar múltiplas nuvens?</h3>
+                        <ul class="bullet-list" style="font-size: 18px;">
+                            <li><i class="fa-solid fa-shield-halved"></i> <strong>Alta Resiliência Global:</strong> Garanta planos de Disaster Recovery extremos. Se uma nuvem inteira cair por problemas físicos, a empresa opera por outra de forma ágil.</li>
+                            <li><i class="fa-solid fa-handshake"></i> <strong>Evitar Lock-in Comercial:</strong> Liberdade e facilidade de portar a arquitetura sem ficar refém das tabelas comerciais de um único provedor.</li>
+                            <li><i class="fa-solid fa-gem"></i> <strong>Melhores Recursos:</strong> Conecte microsserviços aproveitando o core IA da AWS e a esteira de análise corporativa da GCP ou Azure.</li>
+                        </ul>
+                    </div>
+                    <div style="background: #0b1122; padding: 30px; border-radius: 12px; border: 1px solid #1e293b;">
+                        <h3 style="font-size: 21px; color:#ef4444; margin-bottom: 15px;"><i class="fa-solid fa-triangle-exclamation"></i> Cuidados Importantes:</h3>
+                        <p style="font-size: 16px; line-height: 1.6; margin-bottom: 10px;">• **Taxas de Egresso:** A saída de volumes massivos de dados de um provedor de nuvem concorrente para outro costuma ser tributada e encarecer.</p>
+                        <p style="font-size: 16px; line-height: 1.6;">• **Gerenciamento de Times:** O time de operações e desenvolvimento precisará dominar os padrões de redes e terminologias de diferentes painéis técnicos.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 18: Section Title - Distrito Cloud & Solutis -->
+        <div class="slide" id="slide-18">
+            <div class="section-title-layout">
+                <h2>Parte 6: Distrito Cloud & Comunidade</h2>
+                <p>Nossa comunidade técnica na Solutis, cronogramas de aprendizado e caminhos de evolução</p>
+                <hr>
+            </div>
+        </div>
+
+        <!-- Slide 19: Distrito Cloud info -->
+        <div class="slide" id="slide-19">
+            <div class="slide-footer-logo"><i class="fa-solid fa-users"></i> Solutis Community</div>
+            <h2 class="slide-title">Distrito Cloud: Onde o Saber se Encontra</h2>
+            <div class="content-area">
+                <div class="tiled-content">
+                    <div class="tile">
+                        <div class="icon"><i class="fa-solid fa-rotate"></i></div>
+                        <h3>Sessões Semanais Rápidas</h3>
+                        <p style="font-size: 17px; margin-top: 5px;">Entregamos encontros focados de apenas **30 minutos** sem burocracia ou slides entediantes, focados em Live Demos práticas e discussões de arquiteturas reais.</p>
+                    </div>
+                    <div class="tile">
+                        <div class="icon"><i class="fa-solid fa-medal"></i></div>
+                        <h3>Foco Prático em Certificações</h3>
+                        <p style="font-size: 17px; margin-top: 5px;">Estudamos cenários de provas reais das principais certificações AWS, Azure e GCP, servindo como uma plataforma cooperativa para sua evolução profissional.</p>
+                    </div>
+                    <div class="tile">
+                        <div class="icon"><i class="fa-solid fa-share-nodes"></i></div>
+                        <h3>Compartilhamento Livre</h3>
+                        <p style="font-size: 17px; margin-top: 5px;">Membros compartilham scripts Terraform, configurações de Kubernetes, erros comuns de infraestrutura e resolvem gargalos de forma integrada.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 20: Technical Certifications -->
+        <div class="slide" id="slide-20">
+            <div class="slide-footer-logo"><i class="fa-solid fa-graduation-cap"></i> Carreira</div>
+            <h2 class="slide-title">Trilhas de Carreira & Certificações</h2>
+            <div class="content-area">
+                <div class="two-column">
+                    <div>
+                        <p style="font-size: 21px; line-height: 1.7; margin-bottom: 15px;">
+                            Obter um selo internacional de nuvem chancela sua senioridade e impulsiona o crescimento técnico dentro dos projetos da Solutis.
+                        </p>
+                        <p style="font-size: 18px; color:#cbd5e1; margin-bottom: 10px;">📌 <strong>Fundamentos (Iniciante):</strong> AWS Cloud Practitioner ou Azure Fundamentals (AZ-900).</p>
+                        <p style="font-size: 18px; color:#cbd5e1;">📌 <strong>Associações (Intermediário):</strong> AWS Solutions Architect Associate ou Azure Administrator (AZ-104).</p>
+                    </div>
+                    <div style="background: #0b1122; padding: 25px; border-radius: 12px; border: 1px solid #1e293b;">
+                        <h3 style="font-size: 21px; color: #ff9900; margin-bottom: 12px;"><i class="fa-solid fa-circle-nodes"></i> Benefícios da Comunidade Distrito Cloud</h3>
+                        <p style="font-size: 16px; line-height: 1.6; color:#94a3b8; margin-bottom: 10px;">• Trilha focada nos guias oficiais de exames de mercado.</p>
+                        <p style="font-size: 16px; line-height: 1.6; color:#94a3b8; margin-bottom: 10px;">• Simulados de fixação interativos com correções de rationale.</p>
+                        <p style="font-size: 16px; line-height: 1.6; color:#94a3b8;">• Facilidade de construir networking prático com arquitetos seniors.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 21: How to sign up - Passaporte Solutis (CORRECTED FLOW & PURPOSE) -->
+        <div class="slide" id="slide-21">
+            <div class="slide-footer-logo"><i class="fa-solid fa-ticket"></i> Carreira & Comunidade</div>
+            <h2 class="slide-title">Passaporte Solutis: Guia de Carreira</h2>
+            <div class="content-area">
+                <div class="two-column tiled">
+                    <div>
+                        <h3><i class="fa-solid fa-address-card" style="color:#00d2ff; margin-right:10px;"></i> Carreira, Perfil & Oportunidades</h3>
+                        <p style="font-size: 18px; margin-bottom: 10px;">O <strong>Passaporte Solutis</strong> é a nossa plataforma corporativa oficial de **Guia de Carreira**. Ele serve para centralizar e compartilhar as informações de cada profissional (currículos e certificações conquistadas).</p>
+                        <p style="font-size: 18px; margin-bottom: 10px;">Essa visibilidade ajuda a direcionar você para novas **oportunidades de projetos internos** e fomenta o engajamento direto com as comunidades de tecnologia da empresa.</p>
+                    </div>
+                    <div>
+                        <h3><i class="fa-solid fa-route" style="color:#00d2ff; margin-right:10px;"></i> Como Entrar no Distrito Cloud pelo App:</h3>
+                        <ul class="bullet-list" style="font-size: 17px;">
+                            <li><i class="fa-solid fa-chevron-right"></i> **Passo 1:** Faça o logon no aplicativo **Passaporte Solutis**.</li>
+                            <li><i class="fa-solid fa-chevron-right"></i> **Passo 2:** No menu inferior, toque na aba <strong>"Mundi"</strong> <i class="fa-solid fa-earth-americas" style="color: #6366f1;"></i>.</li>
+                            <li><i class="fa-solid fa-chevron-right"></i> **Passo 3:** Na lista de opções, clique em <strong>"Distritos"</strong> <i class="fa-solid fa-mountain-city" style="color: #ff9900;"></i>.</li>
+                            <li><i class="fa-solid fa-chevron-right"></i> **Passo 4:** Toque na nossa comunidade <strong>"Cloud"</strong> <i class="fa-solid fa-cloud text-sky-400"></i>.</li>
+                            <li><i class="fa-solid fa-chevron-right"></i> **Passo 5:** Clique no botão <strong>"Quero Fazer Parte"</strong> para se conectar!</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 22: End / Closing -->
+        <div class="slide" id="slide-22" style="background-image: linear-gradient(rgba(3, 6, 17, 0.96), rgba(3, 6, 17, 0.96)), url('http://googleusercontent.com/image_collection/image_retrieval/1926917886799456828'); background-size: cover;">
+            <div class="title-layout">
+                <h2 style="font-size: 52px; color:#00d2ff; margin-bottom:10px;">Muito Obrigado!</h2>
+                <p class="subtitle" style="color: #ffffff; max-width: 700px; font-size: 21px;">Aproveite o espaço para compartilhar ideias, tirar dúvidas e nos apoiar na trilha semanal.</p>
+                <div style="margin-top: 50px; font-size: 18px; text-align: center;">
+                    <p style="margin-bottom: 12px;"><i class="fa-solid fa-circle-info" style="color:#00d2ff; margin-right: 10px;"></i> Sessão de Perguntas & Respostas com o Embaixador de Nuvem</p>
+                    <p style="font-size: 17px; color:#64748b;">Na próxima semana: Lançando e acessando seu primeiro servidor Web (AWS EC2)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SPEAKER NOTES DRAWER BOX -->
+        <div id="notes-panel" class="notes-panel">
+            <h4><i class="fa-solid fa-clipboard-user"></i> NOTAS DO PALESTRANTE & TIMING PARA O EMBAIXADOR</h4>
+            <p id="notes-content">Instruções para o slide aparecerão aqui.</p>
+        </div>
+
+        <!-- BOTTOM CONTROLS -->
+        <div class="slide-controls">
+            <button class="nav-btn" id="prev-btn" onclick="prevSlide()"><i class="fas fa-chevron-left"></i> Anterior</button>
+            <button class="speaker-notes-btn" onclick="toggleNotes()"><i class="fa-solid fa-eye"></i> Notas do Orador</button>
+            <div class="progress-indicator" id="progress-indicator">Slide 1 de 22</div>
+            <button class="nav-btn" id="next-btn" onclick="nextSlide()">Próximo <i class="fas fa-chevron-right"></i></button>
+        </div>
+
+    </div>
+
+    <script>
+        // SLIDE NAVIGATION CONTROLS
+        let currentSlide = 1;
+        const totalSlides = 22;
+
+        // COMBINED AND ENHANCED SPEAKER NOTES (Sequence without time bounds)
+        const speakerNotes = {
+            1: "Seja muito bem-vindo! Apresente-se como o Embaixador de Cloud. Diga ao público que hoje teremos um Workshop focado no mapeamento real de arquitetura, abrangendo fundamentos físicos, serviços AWS, IA, Multicloud e crescimento profissional de carreira na Solutis.",
+            2: "Transição técnica rápida. Explique que o workshop iniciará dividindo as fases de transição que o mercado de TI sofreu para sair de modelos legados até os dias modernos.",
+            3: "Fase On-Premises. Questione a audiência sobre a dor de ter que esperar meses pela importação de servidores caros (CapEx) e a fragilidade com os problemas físicos de manutenção e energia nos datacenters tradicionais.",
+            4: "Mude para o conceito de Nuvem. Destaque que a computação elástica em nuvem trouxe uma nova dinâmica e redefiniu a forma de trabalhar com tecnologia e inovação.",
+            5: "Foque na definição prática. Explique o modelo 'Pay-as-you-go' de água/luz e mencione brevemente os 5 pilares do NIST. Use termos de mercado de fácil fixação.",
+            6: "Destaque a transição financeira. Esse slide é sensacional para conversar com profissionais de TI e gerentes. Compare CapEx com OpEx e como a agilidade de ativar servidores em 5 minutos acelera homologações de software.",
+            7: "Transição para Modelos e Tipos. Introduza que o time de TI precisa compreender as diferentes categorias de responsabilidade na nuvem.",
+            8: "IaaS vs PaaS vs SaaS. Use a clássica analogia de comida ou pizzas. IaaS é alugar a cozinha equipada para fazer do seu jeito; PaaS é pedir por aplicativo para entregarem pronto; SaaS é consumir diretamente no local.",
+            9: "Modelos de implantação de redes. Detalhe o uso da Nuvem Pública de forma compartilhada e segura, Privada de uso exclusivo de órgãos ou corporações reguladas, e Híbrida como o principal caminho moderno de migração.",
+            10: "Modelo de Responsabilidade Compartilhada. Muito importante! Deixe claro que a AWS cuida da segurança física e de host (segurança DO provedor), enquanto nós clientes respondemos pelas atualizações, regras de portas e criptografias dos dados (segurança NA nuvem).",
+            11: "Transição para AWS Stack. Mapeie agora os recursos práticos de infraestrutura que todo profissional do Distrito Cloud precisa dominar.",
+            12: "Computação, serverless e contêineres. Contraste o uso tradicional de instâncias EC2 com as funções modernas Serverless Lambda (não pague por tempo ocioso de servidor) e o ECS/EKS para orquestrar Docker.",
+            13: "Armazenamento & Banco de Dados. Fale sobre o S3 como a espinha dorsal de arquivos mundiais, RDS facilitando rotinas de bancos relacionais com replicas em Multi-AZ e o DynamoDB entregando escalas massivas globais.",
+            14: "Desacoplamento. Explique como filas no SQS salvam pedidos e evitam falhas em cadeia (efeito dominó). Se um faturamento cair, a fila sustenta as mensagens em segurança até o sistema se recuperar.",
+            15: "Transição para Tendências e Fronteiras Tecnológicas. Mostre para a plateia como a nuvem impulsiona as vertentes de tecnologia mais modernas.",
+            16: "Nuvem & IA. Deixe claro que a IA moderna só existe pelo apoio da nuvem elástica: GPUs de alta densidade por hora (sem precisar comprar hardware), S3 guardando Petabytes de dados para redes neurais, e o Bedrock democratizando modelos por APIs simples.",
+            17: "Multicloud. Mostre os motivadores corporativos de usar nuvens concorrentes combinadas para redundância de desastres e evitar lock-in, alertando sobre custos extras de rede (egresso) e necessidade de especialização do time.",
+            18: "Transição para o Distrito Cloud. Hora de chamar o time para fazer parte dessa jornada cooperativa.",
+            19: "Distrito Cloud institucional. Explique nossa recorrência de encontros objetivos de 30 minutos, compartilhamento de códigos reais, documentações e grupos de dúvidas técnicas.",
+            20: "Trilhas de Carreira. Fale sobre as trilhas de certificações (AWS Cloud Practitioner, AZ-900, Solutions Architect). Mostre que o Distrito é o celeiro ideal para focar e conquistar estes selos valiosos de mercado.",
+            21: "Passaporte Solutis. Explique que o app é o nosso guia de carreira oficial e hub de talentos. É onde cada um compartilha currículos e certificações para que o RH/Gestores mapeiem oportunidades em projetos internos. Mostre o passo a passo exato do fluxo: Login -> Ícone inferior 'Mundi' -> Botão 'Distritos' -> Distrito 'Cloud' -> Botão 'Quero Fazer Parte' para confirmar a conexão de engajamento.",
+            22: "Agradecimentos & Q&A. Agradeça imensamente a presença de todos. Abra o microfone para dúvidas gerais do público e faça a chamada para o próximo encontro focado em computação na AWS com EC2."
+        };
+
+        function updateSlide() {
+            // Hide all slides
+            for(let i = 1; i <= totalSlides; i++) {
+                document.getElementById(`slide-${i}`).classList.remove('active');
+            }
+            // Show current
+            document.getElementById(`slide-${currentSlide}`).classList.add('active');
+            
+            // Update progress text
+            document.getElementById('progress-indicator').innerText = `Slide ${currentSlide} de ${totalSlides}`;
+            
+            // Handle buttons state
+            document.getElementById('prev-btn').disabled = (currentSlide === 1);
+            document.getElementById('next-btn').disabled = (currentSlide === totalSlides);
+
+            // Update current speaker notes content
+            document.getElementById('notes-content').innerText = speakerNotes[currentSlide];
+        }
+
+        function nextSlide() {
+            if(currentSlide < totalSlides) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        // KEYBOARD EVENT LISTENER
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight' || event.key === ' ') {
+                event.preventDefault();
+                nextSlide();
+            } else if (event.key === 'ArrowLeft') {
+                event.preventDefault();
+                prevSlide();
+            }
+        });
+
+        function prevSlide() {
+            if(currentSlide > 1) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        // TOGGLE SPEAKER NOTES DRAWER
+        function toggleNotes() {
+            const notesPanel = document.getElementById('notes-panel');
+            notesPanel.classList.toggle('open');
+        }
+
+        // Initialize presentation on load
+        updateSlide();
+    </script>
+</body>
+</html>
