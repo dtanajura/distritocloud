@@ -526,19 +526,20 @@
             <div class="slide-footer-logo"><i class="fa-brands fa-aws"></i> AWS Tech Stack</div>
             <h2 class="slide-title">Desacoplamento & Mensageria</h2>
             <div class="content-area">
-                <div class="two-column tiled">
-                    <div>
-                        <h3><i class="fa-solid fa-envelope-open-text" style="color:#ff9900; margin-right:10px;"></i> Mensageria com SQS & SNS</h3>
-                        <p style="font-size: 17px; margin-bottom: 10px;">O <strong>Amazon SQS</strong> é um barramento de filas de mensagens altamente durável que desacopla e escala microsserviços de forma assíncrona, prevenindo lentidão ou queda em picos.</p>
-                        <p style="font-size: 17px;">O <strong>Amazon SNS</strong> envia notificações em larga escala no formato Pub/Sub direto a múltiplos inscritos ou gatilhos de computação.</p>
+                <div class="tiled-content">
+                    <div class="tile">
+                        <div class="icon"><i class="fa-solid fa-envelope-open-text"></i></div>
+                        <h3>Mensageria com SQS & SNS</h3>
+                        <p style="font-size: 17px; margin-top: 5px;">O <strong>Amazon SQS</strong> é um barramento de filas de mensagens altamente durável que desacopla e escala microsserviços de forma assíncrona, prevenindo lentidão ou queda em picos.</p>
+                        <p style="font-size: 17px; margin-top: 5px;">O <strong>Amazon SNS</strong> envia notificações em larga escala no formato Pub/Sub direto a múltiplos inscritos ou gatilhos de computação.</p>
                     </div>
-                    <div>
-                        <h3><i class="fa-solid fa-circle-nodes" style="color:#ff9900; margin-right:10px;"></i> Por que desacoplar?</h3>
-                        <p style="font-size: 17px; margin-bottom: 10px;">Num sistema acoplado tradicional, se a camada de faturamento falhar, o cliente não consegue comprar nada e a transação é perdida.</p>
-                        <p style="font-size: 17px;"><strong>Resiliência:</strong> Ao usar o SQS, o pedido do cliente fica guardado em segurança na fila e é processado assim que a camada financeira se recuperar do gargalo.</p>
+                    <div class="tile">
+                        <div class="icon"><i class="fa-solid fa-circle-nodes"></i></div>
+                        <h3>Por que desacoplar?</h3>
+                        <p style="font-size: 17px; margin-top: 5px;">Num sistema acoplado tradicional, se a camada de faturamento falhar, o cliente não consegue comprar nada e a transação é perdida.</p>
+                        <p style="font-size: 17px; margin-top: 5px;"><strong>Resiliência:</strong> Ao usar o SQS, o pedido do cliente fica guardado em segurança na fila e é processado assim que a camada financeira se recuperar do gargalo.</p>
                     </div>
                 </div>
-            </div>
         </div>
 
         <!-- Slide 16: Section Title - Cloud & AI -->
